@@ -57,6 +57,23 @@ const Tasks = () => {
     }
   }, [searchParams]);
 
+  // Handle viewId from URL (from global search)
+  useEffect(() => {
+    const viewId = searchParams.get('viewId');
+    if (viewId && tasks.length > 0) {
+      const taskToView = tasks.find(t => t.id === viewId);
+      if (taskToView) {
+        setEditingTask(taskToView);
+        setShowModal(true);
+        // Clear the viewId from URL after opening - use window.history to avoid re-render loop
+        const newParams = new URLSearchParams(searchParams);
+        newParams.delete('viewId');
+        const newUrl = newParams.toString() ? `/tasks?${newParams.toString()}` : '/tasks';
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [searchParams, tasks]);
+
   const handleEdit = (task: Task) => {
     setEditingTask(task);
     setShowModal(true);
@@ -125,13 +142,8 @@ const Tasks = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  // Show skeleton in content area instead of blocking spinner
+  const showSkeleton = loading && tasks.length === 0;
 
   return (
     <div className="h-screen flex flex-col bg-background overflow-hidden">
@@ -149,7 +161,7 @@ const Tasks = () => {
         <div className="px-6 h-16 flex items-center border-b w-full">
           <div className="flex items-center justify-between w-full">
             <div className="min-w-0 flex-1">
-              <h1 className="text-2xl text-foreground font-semibold">Tasks</h1>
+              <h1 className="text-xl text-foreground font-semibold">Tasks</h1>
             </div>
             <div className="flex items-center gap-3">
               {/* View Toggle */}
@@ -171,7 +183,7 @@ const Tasks = () => {
               {/* Actions Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1">
+                  <Button variant="outline" size="sm">
                     Actions
                   </Button>
                 </DropdownMenuTrigger>
@@ -199,8 +211,8 @@ const Tasks = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              <Button size="sm" onClick={() => setShowModal(true)}>
-                <Plus className="h-4 w-4 mr-1" />
+              <Button size="sm" className="gap-1.5" onClick={() => setShowModal(true)}>
+                <Plus className="w-4 h-4" />
                 Add Task
               </Button>
             </div>
@@ -210,30 +222,41 @@ const Tasks = () => {
 
       {/* Main Content */}
       <div className="flex-1 min-h-0 overflow-auto px-4 pt-2 pb-4">
-        {viewMode === 'list' && (
-          <TaskListView 
-            tasks={tasks} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete} 
-            onStatusChange={handleStatusChange} 
-            onToggleComplete={handleToggleComplete} 
-            initialStatusFilter={initialStatusFilter} 
-            initialOwnerFilter={initialOwnerFilter}
-          />
-        )}
-        {viewMode === 'kanban' && (
-          <TaskKanbanView 
-            tasks={tasks} 
-            onEdit={handleEdit} 
-            onDelete={handleDelete} 
-            onStatusChange={handleStatusChange}
-          />
-        )}
-        {viewMode === 'calendar' && (
-          <TaskCalendarView 
-            tasks={tasks} 
-            onEdit={handleEdit}
-          />
+        {showSkeleton ? (
+          <div className="space-y-4">
+            <div className="h-10 bg-muted animate-pulse rounded" />
+            <div className="h-64 bg-muted animate-pulse rounded" />
+          </div>
+        ) : (
+          <>
+            {viewMode === 'list' && (
+              <TaskListView 
+                tasks={tasks} 
+                onEdit={handleEdit} 
+                onDelete={handleDelete} 
+                onStatusChange={handleStatusChange} 
+                onToggleComplete={handleToggleComplete} 
+                initialStatusFilter={initialStatusFilter} 
+                initialOwnerFilter={initialOwnerFilter}
+                selectedTasks={selectedTasks}
+                onSelectionChange={setSelectedTasks}
+              />
+            )}
+            {viewMode === 'kanban' && (
+              <TaskKanbanView 
+                tasks={tasks} 
+                onEdit={handleEdit} 
+                onDelete={handleDelete} 
+                onStatusChange={handleStatusChange}
+              />
+            )}
+            {viewMode === 'calendar' && (
+              <TaskCalendarView 
+                tasks={tasks} 
+                onEdit={handleEdit}
+              />
+            )}
+          </>
         )}
       </div>
 
