@@ -55,10 +55,27 @@ export const AccountDetailModal = ({ open, onOpenChange, account, onUpdate, onEd
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [isTemporarilyHidden, setIsTemporarilyHidden] = useState(false);
+  
   // Update activeTab when defaultTab prop changes
   useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab, open]);
+
+  // Handle task modal open - close this modal temporarily
+  const handleTaskModalOpen = () => {
+    setIsTemporarilyHidden(true);
+    onOpenChange(false);
+  };
+
+  // Handle task modal close - reopen this modal
+  const handleTaskModalClose = () => {
+    setIsTemporarilyHidden(false);
+    setTimeout(() => {
+      onOpenChange(true);
+      setActiveTab('tasks'); // Return to tasks tab
+    }, 100);
+  };
 
   if (!account) return null;
 
@@ -69,8 +86,8 @@ export const AccountDetailModal = ({ open, onOpenChange, account, onUpdate, onEd
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div>
@@ -216,6 +233,8 @@ export const AccountDetailModal = ({ open, onOpenChange, account, onUpdate, onEd
                 moduleType="accounts"
                 recordId={account.id}
                 recordName={account.company_name}
+                onTaskModalOpen={handleTaskModalOpen}
+                onTaskModalClose={handleTaskModalClose}
               />
             </TabsContent>
 
@@ -243,7 +262,6 @@ export const AccountDetailModal = ({ open, onOpenChange, account, onUpdate, onEd
         accountId={account.id}
         onSuccess={handleActivityLogged}
       />
-
     </>
   );
 };

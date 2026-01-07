@@ -16,12 +16,16 @@ interface RelatedTasksSectionProps {
   moduleType: TaskModuleType;
   recordId: string;
   recordName?: string;
+  onTaskModalOpen?: () => void;
+  onTaskModalClose?: () => void;
 }
 
 export const RelatedTasksSection = ({
   moduleType,
   recordId,
   recordName,
+  onTaskModalOpen,
+  onTaskModalClose,
 }: RelatedTasksSectionProps) => {
   const { user } = useAuth();
   const { createTask, updateTask } = useTasks();
@@ -144,7 +148,14 @@ export const RelatedTasksSection = ({
               <ListTodo className="h-4 w-4" />
               Tasks ({tasks.length})
             </CardTitle>
-            <Button size="sm" onClick={() => setShowTaskModal(true)} className="gap-1">
+            <Button 
+              size="sm" 
+              onClick={() => {
+                onTaskModalOpen?.();
+                setTimeout(() => setShowTaskModal(true), 150);
+              }} 
+              className="gap-1"
+            >
               <Plus className="h-3 w-3" />
               Add Task
             </Button>
@@ -172,7 +183,8 @@ export const RelatedTasksSection = ({
                         }`}
                         onClick={() => {
                           setEditingTask(task);
-                          setShowTaskModal(true);
+                          onTaskModalOpen?.();
+                          setTimeout(() => setShowTaskModal(true), 150);
                         }}
                       >
                         <Checkbox
@@ -217,7 +229,8 @@ export const RelatedTasksSection = ({
                         className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer opacity-60"
                         onClick={() => {
                           setEditingTask(task);
-                          setShowTaskModal(true);
+                          onTaskModalOpen?.();
+                          setTimeout(() => setShowTaskModal(true), 150);
                         }}
                       >
                         <Checkbox
@@ -248,21 +261,30 @@ export const RelatedTasksSection = ({
         open={showTaskModal}
         onOpenChange={(open) => {
           setShowTaskModal(open);
-          if (!open) setEditingTask(null);
+          if (!open) {
+            setEditingTask(null);
+            onTaskModalClose?.();
+          }
         }}
         task={editingTask}
-        onSubmit={handleTaskSubmit}
+        onSubmit={async (data) => {
+          const result = await handleTaskSubmit(data);
+          if (result) {
+            onTaskModalClose?.();
+          }
+          return result;
+        }}
         onUpdate={async (taskId, data, original) => {
           const result = await updateTask(taskId, data, original);
           if (result) {
             setShowTaskModal(false);
             setEditingTask(null);
             fetchRelatedTasks();
+            onTaskModalClose?.();
           }
           return result;
         }}
         context={{ module: moduleType, recordId, recordName, locked: true }}
-        nested={true}
       />
     </>
   );

@@ -126,6 +126,21 @@ export const MeetingDetailModal = ({
   const [linkedDeal, setLinkedDeal] = useState<LinkedDeal | null>(null);
   const [loading, setLoading] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
+  const [isTemporarilyHidden, setIsTemporarilyHidden] = useState(false);
+
+  // Handle task modal open - close this modal temporarily
+  const handleTaskModalOpen = () => {
+    setIsTemporarilyHidden(true);
+    onOpenChange(false);
+  };
+
+  // Handle task modal close - reopen this modal
+  const handleTaskModalClose = () => {
+    setIsTemporarilyHidden(false);
+    setTimeout(() => {
+      onOpenChange(true);
+    }, 100);
+  };
 
   const userIds = [meeting?.created_by].filter(Boolean) as string[];
   const { displayNames } = useUserDisplayNames(userIds);
@@ -222,8 +237,8 @@ export const MeetingDetailModal = ({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
         <DialogHeader>
           <div className="flex items-start justify-between">
             <div>
@@ -251,7 +266,10 @@ export const MeetingDetailModal = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowTaskModal(true)}
+                onClick={() => {
+                  handleTaskModalOpen();
+                  setTimeout(() => setShowTaskModal(true), 150);
+                }}
                 className="gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -532,7 +550,12 @@ export const MeetingDetailModal = ({
 
     <TaskModal
       open={showTaskModal}
-      onOpenChange={setShowTaskModal}
+      onOpenChange={(open) => {
+        setShowTaskModal(open);
+        if (!open) {
+          handleTaskModalClose();
+        }
+      }}
       onSubmit={async (data) => {
         const { data: userData } = await supabase.auth.getUser();
         if (!userData?.user?.id) return null;
@@ -552,6 +575,7 @@ export const MeetingDetailModal = ({
           setShowTaskModal(false);
           fetchLinkedData();
           onUpdate?.();
+          handleTaskModalClose();
           toast({
             title: "Success",
             description: "Task created and linked to meeting",
@@ -561,7 +585,6 @@ export const MeetingDetailModal = ({
         return null;
       }}
       context={{ module: 'meetings', recordId: meeting.id, recordName: meeting.subject, locked: true }}
-      nested={true}
     />
   </>
   );

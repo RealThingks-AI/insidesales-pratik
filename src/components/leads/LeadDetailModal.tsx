@@ -91,6 +91,21 @@ export const LeadDetailModal = ({
   const [showMeetingModal, setShowMeetingModal] = useState(false);
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isTemporarilyHidden, setIsTemporarilyHidden] = useState(false);
+
+  // Handle task modal open - close this modal temporarily
+  const handleTaskModalOpen = () => {
+    setIsTemporarilyHidden(true);
+    onOpenChange(false);
+  };
+
+  // Handle task modal close - reopen this modal
+  const handleTaskModalClose = () => {
+    setIsTemporarilyHidden(false);
+    setTimeout(() => {
+      onOpenChange(true);
+    }, 100);
+  };
 
   // Fetch linked account details
   const { data: linkedAccount } = useQuery({
@@ -127,8 +142,8 @@ export const LeadDetailModal = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div>
@@ -176,7 +191,10 @@ export const LeadDetailModal = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowTaskModal(true)}
+                  onClick={() => {
+                    handleTaskModalOpen();
+                    setTimeout(() => setShowTaskModal(true), 150);
+                  }}
                   className="gap-2"
                 >
                   <CheckSquare className="h-4 w-4" />
@@ -437,9 +455,13 @@ export const LeadDetailModal = ({
 
       <TaskModal
         open={showTaskModal}
-        onOpenChange={setShowTaskModal}
+        onOpenChange={(open) => {
+          setShowTaskModal(open);
+          if (!open) {
+            handleTaskModalClose();
+          }
+        }}
         onSubmit={async (data) => {
-          // Import and use createTask from useTasks if needed
           const { supabase } = await import('@/integrations/supabase/client');
           const { data: userData } = await supabase.auth.getUser();
           if (!userData?.user?.id) return null;
@@ -458,12 +480,12 @@ export const LeadDetailModal = ({
           if (!error && taskData) {
             setShowTaskModal(false);
             onUpdate?.();
+            handleTaskModalClose();
             return taskData;
           }
           return null;
         }}
         context={{ module: 'leads', recordId: lead.id, recordName: lead.lead_name }}
-        nested={true}
       />
     </>
   );

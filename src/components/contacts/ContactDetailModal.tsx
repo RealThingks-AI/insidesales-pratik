@@ -92,8 +92,23 @@ export const ContactDetailModal = ({
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [accountName, setAccountName] = useState<string | null>(null);
+  const [isTemporarilyHidden, setIsTemporarilyHidden] = useState(false);
   
   const { createTask, updateTask } = useTasks();
+
+  // Handle task modal open - close this modal temporarily
+  const handleTaskModalOpen = () => {
+    setIsTemporarilyHidden(true);
+    onOpenChange(false);
+  };
+
+  // Handle task modal close - reopen this modal
+  const handleTaskModalClose = () => {
+    setIsTemporarilyHidden(false);
+    setTimeout(() => {
+      onOpenChange(true);
+    }, 100);
+  };
 
   useEffect(() => {
     if (contact) {
@@ -157,8 +172,8 @@ export const ContactDetailModal = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
           <DialogHeader>
             <div className="flex items-start justify-between">
               <div>
@@ -216,7 +231,10 @@ export const ContactDetailModal = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setShowTaskModal(true)}
+                  onClick={() => {
+                    handleTaskModalOpen();
+                    setTimeout(() => setShowTaskModal(true), 150);
+                  }}
                   className="gap-2"
                 >
                   <ListTodo className="h-4 w-4" />
@@ -493,18 +511,23 @@ export const ContactDetailModal = ({
 
       <TaskModal
         open={showTaskModal}
-        onOpenChange={setShowTaskModal}
+        onOpenChange={(open) => {
+          setShowTaskModal(open);
+          if (!open) {
+            handleTaskModalClose();
+          }
+        }}
         onSubmit={async (data) => {
           const result = await createTask({ ...data, contact_id: contact.id, module_type: 'contacts' });
           if (result) {
             onUpdate?.();
             setShowTaskModal(false);
+            handleTaskModalClose();
           }
           return result;
         }}
         onUpdate={updateTask}
         context={{ module: 'contacts', recordId: contact.id, recordName: contact.contact_name }}
-        nested={true}
       />
     </>
   );
