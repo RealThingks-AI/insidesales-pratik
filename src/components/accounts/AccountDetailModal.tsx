@@ -70,22 +70,23 @@ export const AccountDetailModal = ({ open, onOpenChange, account, onUpdate, onEd
     setActiveTab(defaultTab);
   }, [defaultTab, open]);
 
-  // Handle request to create task - close account modal, open task modal
+  // Handle request to create task - close account modal first, then open task modal
   const handleRequestCreateTask = () => {
     setEditingTask(null);
     onOpenChange(false); // Close account modal first
-    requestAnimationFrame(() => {
-      setTaskModalOpen(true); // Then open task modal
-    });
+    // Use setTimeout to ensure the dialog fully unmounts and cleans up pointer-events
+    setTimeout(() => {
+      setTaskModalOpen(true);
+    }, 250);
   };
 
-  // Handle request to edit task - close account modal, open task modal with task
+  // Handle request to edit task
   const handleRequestEditTask = (task: Task) => {
     setEditingTask(task);
-    onOpenChange(false); // Close account modal first
-    requestAnimationFrame(() => {
-      setTaskModalOpen(true); // Then open task modal
-    });
+    onOpenChange(false);
+    setTimeout(() => {
+      setTaskModalOpen(true);
+    }, 250);
   };
 
   // Handle task modal close - reopen account modal
