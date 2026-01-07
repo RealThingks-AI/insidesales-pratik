@@ -139,6 +139,18 @@ export const RelatedTasksSection = ({
     );
   }
 
+  const handleAddTask = () => {
+    setEditingTask(null);
+    setShowTaskModal(true);
+    onTaskModalOpen?.();
+  };
+
+  const handleEditTask = (task: Task) => {
+    setEditingTask(task);
+    setShowTaskModal(true);
+    onTaskModalOpen?.();
+  };
+
   return (
     <>
       <Card>
@@ -150,10 +162,7 @@ export const RelatedTasksSection = ({
             </CardTitle>
             <Button 
               size="sm" 
-              onClick={() => {
-                onTaskModalOpen?.();
-                setTimeout(() => setShowTaskModal(true), 150);
-              }} 
+              onClick={handleAddTask} 
               className="gap-1"
             >
               <Plus className="h-3 w-3" />
@@ -181,11 +190,7 @@ export const RelatedTasksSection = ({
                         className={`flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer ${
                           dueDateInfo.isOverdue ? 'bg-red-50 dark:bg-red-900/10' : ''
                         }`}
-                        onClick={() => {
-                          setEditingTask(task);
-                          onTaskModalOpen?.();
-                          setTimeout(() => setShowTaskModal(true), 150);
-                        }}
+                        onClick={() => handleEditTask(task)}
                       >
                         <Checkbox
                           checked={task.status === 'completed'}
@@ -227,11 +232,7 @@ export const RelatedTasksSection = ({
                       <div
                         key={task.id}
                         className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer opacity-60"
-                        onClick={() => {
-                          setEditingTask(task);
-                          onTaskModalOpen?.();
-                          setTimeout(() => setShowTaskModal(true), 150);
-                        }}
+                        onClick={() => handleEditTask(task)}
                       >
                         <Checkbox
                           checked={true}
