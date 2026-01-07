@@ -464,3 +464,16 @@ All colors MUST be HSL.
 [data-state="closed"] > [data-radix-dialog-content] {
   animation: dialog-content-out 0.2s ease-in;
 }
+
+/* Ensure dialog content always has pointer events enabled */
+[data-radix-dialog-content] {
+  pointer-events: auto !important;
+}
+
+/* Ensure inputs within dialogs are always interactive */
+[data-radix-dialog-content] input,
+[data-radix-dialog-content] textarea,
+[data-radix-dialog-content] select,
+[data-radix-dialog-content] button {
+  pointer-events: auto !important;
+}

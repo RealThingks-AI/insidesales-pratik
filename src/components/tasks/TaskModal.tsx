@@ -463,9 +463,18 @@ export const TaskModal = ({
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
+      <Dialog open={open} onOpenChange={onOpenChange} modal={true}>
         <DialogContent 
           className="max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200"
+          onOpenAutoFocus={(e) => {
+            // Ensure focus is properly set when dialog opens
+            setTimeout(() => {
+              const firstInput = document.querySelector('[data-radix-dialog-content] input:not([disabled])') as HTMLInputElement;
+              if (firstInput) {
+                firstInput.focus();
+              }
+            }, 50);
+          }}
         >
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
