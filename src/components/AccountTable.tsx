@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCRUDAudit } from "@/hooks/useCRUDAudit";
@@ -25,8 +25,6 @@ import { getAccountStatusColor } from "@/utils/accountStatusUtils";
 import { moveFieldToEnd } from "@/utils/columnOrderUtils";
 import { ClearFiltersButton } from "./shared/ClearFiltersButton";
 import { TableSkeleton } from "./shared/Skeletons";
-import { TaskModal } from "./tasks/TaskModal";
-import { useTasks } from "@/hooks/useTasks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // Export ref interface for parent component
@@ -155,14 +153,18 @@ const AccountTable = forwardRef<AccountTableRef, AccountTableProps>(({
   const [viewingAccount, setViewingAccount] = useState<Account | null>(null);
   const [detailModalDefaultTab, setDetailModalDefaultTab] = useState("overview");
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const [taskModalOpen, setTaskModalOpen] = useState(false);
-  const [taskAccountId, setTaskAccountId] = useState<string | null>(null);
-
-  const { createTask } = useTasks();
+  const navigate = useNavigate();
 
   const handleCreateTask = (account: Account) => {
-    setTaskAccountId(account.id);
-    setTaskModalOpen(true);
+    const params = new URLSearchParams({
+      create: '1',
+      module: 'accounts',
+      recordId: account.id,
+      recordName: encodeURIComponent(account.company_name || 'Account'),
+      return: '/accounts',
+      returnViewId: account.id,
+    });
+    navigate(`/tasks?${params.toString()}`);
   };
 
   // viewId effect is moved below the accounts query
@@ -751,12 +753,6 @@ const AccountTable = forwardRef<AccountTableRef, AccountTableProps>(({
         defaultTab={detailModalDefaultTab}
       />
 
-      <TaskModal
-        open={taskModalOpen}
-        onOpenChange={setTaskModalOpen}
-        onSubmit={createTask}
-        context={taskAccountId ? { module: 'accounts', recordId: taskAccountId, locked: true } : undefined}
-      />
     </div>;
 });
 AccountTable.displayName = "AccountTable";

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCRUDAudit } from "@/hooks/useCRUDAudit";
@@ -23,13 +23,11 @@ import { ContactDetailModal } from "./contacts/ContactDetailModal";
 import { AccountDetailModalById } from "./accounts/AccountDetailModalById";
 import { SendEmailModal } from "./SendEmailModal";
 import { MeetingModal } from "./MeetingModal";
-import { TaskModal } from "./tasks/TaskModal";
 import { ConvertContactToLeadModal } from "./contacts/ConvertContactToLeadModal";
 import { MergeRecordsModal } from "./shared/MergeRecordsModal";
 import { HighlightedText } from "./shared/HighlightedText";
 import { ClearFiltersButton } from "./shared/ClearFiltersButton";
 import { TableSkeleton } from "./shared/Skeletons";
-import { useTasks } from "@/hooks/useTasks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { moveFieldToEnd } from "@/utils/columnOrderUtils";
 
@@ -190,8 +188,6 @@ export const ContactTable = forwardRef<ContactTableRef, ContactTableProps>(({
   const [emailModalOpen, setEmailModalOpen] = useState(false);
   const [meetingModalOpen, setMeetingModalOpen] = useState(false);
   const [meetingContact, setMeetingContact] = useState<Contact | null>(null);
-  const [taskModalOpen, setTaskModalOpen] = useState(false);
-  const [taskContactId, setTaskContactId] = useState<string | null>(null);
   
   // Convert to Lead modal states
   const [convertModalOpen, setConvertModalOpen] = useState(false);
@@ -201,12 +197,19 @@ export const ContactTable = forwardRef<ContactTableRef, ContactTableProps>(({
   const [mergeModalOpen, setMergeModalOpen] = useState(false);
   const [mergeSourceId, setMergeSourceId] = useState<string>("");
   const [mergeTargetId, setMergeTargetId] = useState<string>("");
-
-  const { createTask } = useTasks();
+  
+  const navigate = useNavigate();
 
   const handleCreateTask = (contact: Contact) => {
-    setTaskContactId(contact.id);
-    setTaskModalOpen(true);
+    const params = new URLSearchParams({
+      create: '1',
+      module: 'contacts',
+      recordId: contact.id,
+      recordName: encodeURIComponent(contact.contact_name || 'Contact'),
+      return: '/contacts',
+      returnViewId: contact.id,
+    });
+    navigate(`/tasks?${params.toString()}`);
   };
 
   // Fetch all profiles for owner dropdown with caching
@@ -977,14 +980,6 @@ export const ContactTable = forwardRef<ContactTableRef, ContactTableProps>(({
           setMeetingContact(null);
           fetchContacts();
         }}
-      />
-
-      {/* Task Modal */}
-      <TaskModal
-        open={taskModalOpen}
-        onOpenChange={setTaskModalOpen}
-        onSubmit={createTask}
-        context={taskContactId ? { module: 'contacts', recordId: taskContactId, locked: true } : undefined}
       />
 
       {/* Convert to Lead Modal */}

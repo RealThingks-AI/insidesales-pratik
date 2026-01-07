@@ -25,8 +25,6 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import { getMeetingStatus } from "@/utils/meetingStatus";
 import { MeetingDetailModal } from "@/components/meetings/MeetingDetailModal";
-import { TaskModal } from "@/components/tasks/TaskModal";
-import { useTasks } from "@/hooks/useTasks";
 
 type SortColumn = 'subject' | 'date' | 'time' | 'lead_contact' | 'status' | null;
 type SortDirection = 'asc' | 'desc';
@@ -86,14 +84,17 @@ const Meetings = () => {
   // Column customizer state
   const [showColumnCustomizer, setShowColumnCustomizer] = useState(false);
   const [columns, setColumns] = useState<MeetingColumnConfig[]>(defaultMeetingColumns);
-  const [taskModalOpen, setTaskModalOpen] = useState(false);
-  const [taskMeetingId, setTaskMeetingId] = useState<string | null>(null);
-
-  const { createTask } = useTasks();
 
   const handleCreateTask = (meeting: Meeting) => {
-    setTaskMeetingId(meeting.id);
-    setTaskModalOpen(true);
+    const params = new URLSearchParams({
+      create: '1',
+      module: 'meetings',
+      recordId: meeting.id,
+      recordName: encodeURIComponent(meeting.subject || 'Meeting'),
+      return: '/meetings',
+      returnViewId: meeting.id,
+    });
+    navigate(`/tasks?${params.toString()}`);
   };
 
   // Get owner parameter from URL - "me" means filter by current user
@@ -855,13 +856,6 @@ const Meetings = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Task Modal */}
-      <TaskModal
-        open={taskModalOpen}
-        onOpenChange={setTaskModalOpen}
-        onSubmit={createTask}
-        context={taskMeetingId ? { module: 'meetings', recordId: taskMeetingId, locked: true } : undefined}
-      />
     </div>;
 };
 export default Meetings;

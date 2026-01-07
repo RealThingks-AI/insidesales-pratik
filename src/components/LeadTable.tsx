@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, forwardRef, useImperativeHandle } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useCRUDAudit } from "@/hooks/useCRUDAudit";
@@ -24,12 +24,10 @@ import { LeadDeleteConfirmDialog } from "./LeadDeleteConfirmDialog";
 import { AccountDetailModalById } from "./accounts/AccountDetailModalById";
 import { SendEmailModal, EmailRecipient } from "./SendEmailModal";
 import { MeetingModal } from "./MeetingModal";
-import { TaskModal } from "./tasks/TaskModal";
 import { LeadDetailModal } from "./leads/LeadDetailModal";
 import { HighlightedText } from "./shared/HighlightedText";
 import { ClearFiltersButton } from "./shared/ClearFiltersButton";
 import { TableSkeleton } from "./shared/Skeletons";
-import { useTasks } from "@/hooks/useTasks";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { moveFieldToEnd } from "@/utils/columnOrderUtils";
 
@@ -221,10 +219,19 @@ const LeadTable = forwardRef<LeadTableRef, LeadTableProps>(({
   const [emailRecipient, setEmailRecipient] = useState<EmailRecipient | null>(null);
   const [meetingModalOpen, setMeetingModalOpen] = useState(false);
   const [meetingLead, setMeetingLead] = useState<Lead | null>(null);
-  const [taskModalOpen, setTaskModalOpen] = useState(false);
-  const [taskLeadId, setTaskLeadId] = useState<string | null>(null);
-  
-  const { createTask } = useTasks();
+  const navigate = useNavigate();
+
+  const handleCreateTask = (lead: Lead) => {
+    const params = new URLSearchParams({
+      create: '1',
+      module: 'leads',
+      recordId: lead.id,
+      recordName: encodeURIComponent(lead.lead_name || 'Lead'),
+      return: '/leads',
+      returnViewId: lead.id,
+    });
+    navigate(`/tasks?${params.toString()}`);
+  };
 
   // Fetch all profiles for owner dropdown with caching
   const { data: allProfiles = [] } = useQuery({
@@ -531,10 +538,6 @@ const LeadTable = forwardRef<LeadTableRef, LeadTableProps>(({
     setLeadToConvert(null);
   };
 
-  const handleCreateTask = (lead: Lead) => {
-    setTaskLeadId(lead.id);
-    setTaskModalOpen(true);
-  };
 
   const handleViewLead = (lead: Lead) => {
     setViewingLead(lead);
@@ -906,14 +909,7 @@ const LeadTable = forwardRef<LeadTableRef, LeadTableProps>(({
         onSuccess={handleConvertSuccess} 
       />
 
-      <TaskModal
-        open={taskModalOpen}
-        onOpenChange={setTaskModalOpen}
-        onSubmit={createTask}
-        context={taskLeadId ? { module: 'leads', recordId: taskLeadId, locked: true } : undefined}
-      />
-
-      <LeadDeleteConfirmDialog 
+      <LeadDeleteConfirmDialog
         open={showDeleteDialog} 
         onConfirm={handleDelete} 
         onCancel={() => {
