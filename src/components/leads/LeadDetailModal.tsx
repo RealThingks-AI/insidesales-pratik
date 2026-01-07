@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -17,7 +18,6 @@ import { SendEmailModal } from '@/components/SendEmailModal';
 import { LeadActivityTimeline } from './LeadActivityTimeline';
 import { LeadActivityLogModal } from './LeadActivityLogModal';
 import { MeetingModal } from '@/components/MeetingModal';
-import { TaskModal } from '@/components/tasks/TaskModal';
 import { getLeadStatusColor } from '@/utils/leadStatusUtils';
 import {
   User,
@@ -85,26 +85,27 @@ export const LeadDetailModal = ({
   onUpdate,
   onEdit,
 }: LeadDetailModalProps) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showActivityLogModal, setShowActivityLogModal] = useState(false);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isTemporarilyHidden, setIsTemporarilyHidden] = useState(false);
 
-  // Handle task modal open - close this modal temporarily
-  const handleTaskModalOpen = () => {
-    setIsTemporarilyHidden(true);
+  // Navigate to Tasks module for task creation
+  const handleRequestCreateTask = () => {
+    if (!lead) return;
+    const params = new URLSearchParams({
+      create: '1',
+      module: 'leads',
+      recordId: lead.id,
+      recordName: lead.lead_name,
+      return: '/leads',
+      returnViewId: lead.id,
+      returnTab: 'related',
+    });
     onOpenChange(false);
-  };
-
-  // Handle task modal close - reopen this modal
-  const handleTaskModalClose = () => {
-    setIsTemporarilyHidden(false);
-    setTimeout(() => {
-      onOpenChange(true);
-    }, 100);
+    navigate(`/tasks?${params.toString()}`);
   };
 
   // Fetch linked account details
@@ -191,10 +192,7 @@ export const LeadDetailModal = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    handleTaskModalOpen();
-                    setTimeout(() => setShowTaskModal(true), 150);
-                  }}
+                  onClick={handleRequestCreateTask}
                   className="gap-2"
                 >
                   <CheckSquare className="h-4 w-4" />
@@ -451,41 +449,6 @@ export const LeadDetailModal = ({
           setShowMeetingModal(false);
           onUpdate?.();
         }}
-      />
-
-      <TaskModal
-        open={showTaskModal}
-        onOpenChange={(open) => {
-          setShowTaskModal(open);
-          if (!open) {
-            handleTaskModalClose();
-          }
-        }}
-        onSubmit={async (data) => {
-          const { supabase } = await import('@/integrations/supabase/client');
-          const { data: userData } = await supabase.auth.getUser();
-          if (!userData?.user?.id) return null;
-          
-          const { data: taskData, error } = await supabase
-            .from('tasks')
-            .insert({
-              ...data,
-              lead_id: lead.id,
-              module_type: 'leads',
-              created_by: userData.user.id,
-            })
-            .select()
-            .single();
-
-          if (!error && taskData) {
-            setShowTaskModal(false);
-            onUpdate?.();
-            handleTaskModalClose();
-            return taskData;
-          }
-          return null;
-        }}
-        context={{ module: 'leads', recordId: lead.id, recordName: lead.lead_name }}
       />
     </>
   );

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
@@ -20,8 +21,6 @@ import { RecordChangeHistory } from '@/components/shared/RecordChangeHistory';
 import { SendEmailModal } from '@/components/SendEmailModal';
 import { AccountDetailModalById } from '@/components/accounts/AccountDetailModalById';
 import { MeetingModal } from '@/components/MeetingModal';
-import { TaskModal } from '@/components/tasks/TaskModal';
-import { useTasks } from '@/hooks/useTasks';
 import { toast } from '@/hooks/use-toast';
 import {
   User,
@@ -84,30 +83,29 @@ export const ContactDetailModal = ({
   onUpdate,
   onEdit,
 }: ContactDetailModalProps) => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [showActivityLogModal, setShowActivityLogModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showMeetingModal, setShowMeetingModal] = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [accountName, setAccountName] = useState<string | null>(null);
-  const [isTemporarilyHidden, setIsTemporarilyHidden] = useState(false);
-  
-  const { createTask, updateTask } = useTasks();
 
-  // Handle task modal open - close this modal temporarily
-  const handleTaskModalOpen = () => {
-    setIsTemporarilyHidden(true);
+  // Navigate to Tasks module for task creation
+  const handleRequestCreateTask = () => {
+    if (!contact) return;
+    const params = new URLSearchParams({
+      create: '1',
+      module: 'contacts',
+      recordId: contact.id,
+      recordName: contact.contact_name,
+      return: '/contacts',
+      returnViewId: contact.id,
+      returnTab: 'related',
+    });
     onOpenChange(false);
-  };
-
-  // Handle task modal close - reopen this modal
-  const handleTaskModalClose = () => {
-    setIsTemporarilyHidden(false);
-    setTimeout(() => {
-      onOpenChange(true);
-    }, 100);
+    navigate(`/tasks?${params.toString()}`);
   };
 
   useEffect(() => {
@@ -231,10 +229,7 @@ export const ContactDetailModal = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => {
-                    handleTaskModalOpen();
-                    setTimeout(() => setShowTaskModal(true), 150);
-                  }}
+                  onClick={handleRequestCreateTask}
                   className="gap-2"
                 >
                   <ListTodo className="h-4 w-4" />
@@ -507,27 +502,6 @@ export const ContactDetailModal = ({
           onUpdate?.();
           setShowMeetingModal(false);
         }}
-      />
-
-      <TaskModal
-        open={showTaskModal}
-        onOpenChange={(open) => {
-          setShowTaskModal(open);
-          if (!open) {
-            handleTaskModalClose();
-          }
-        }}
-        onSubmit={async (data) => {
-          const result = await createTask({ ...data, contact_id: contact.id, module_type: 'contacts' });
-          if (result) {
-            onUpdate?.();
-            setShowTaskModal(false);
-            handleTaskModalClose();
-          }
-          return result;
-        }}
-        onUpdate={updateTask}
-        context={{ module: 'contacts', recordId: contact.id, recordName: contact.contact_name }}
       />
     </>
   );

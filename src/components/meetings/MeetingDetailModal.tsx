@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -32,7 +33,6 @@ import { useUserDisplayNames } from "@/hooks/useUserDisplayNames";
 import { getMeetingStatus } from "@/utils/meetingStatus";
 import { MeetingFollowUpsSection } from "./MeetingFollowUpsSection";
 import { RecordChangeHistory } from "@/components/shared/RecordChangeHistory";
-import { TaskModal } from "@/components/tasks/TaskModal";
 
 interface Meeting {
   id: string;
@@ -120,26 +120,27 @@ export const MeetingDetailModal = ({
   onUpdate 
 }: MeetingDetailModalProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [linkedTasks, setLinkedTasks] = useState<LinkedTask[]>([]);
   const [linkedAccount, setLinkedAccount] = useState<LinkedAccount | null>(null);
   const [linkedDeal, setLinkedDeal] = useState<LinkedDeal | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
-  const [isTemporarilyHidden, setIsTemporarilyHidden] = useState(false);
 
-  // Handle task modal open - close this modal temporarily
-  const handleTaskModalOpen = () => {
-    setIsTemporarilyHidden(true);
+  // Navigate to Tasks module for task creation
+  const handleRequestCreateTask = () => {
+    if (!meeting) return;
+    const params = new URLSearchParams({
+      create: '1',
+      module: 'meetings',
+      recordId: meeting.id,
+      recordName: meeting.subject,
+      return: '/meetings',
+      returnViewId: meeting.id,
+      returnTab: 'related',
+    });
     onOpenChange(false);
-  };
-
-  // Handle task modal close - reopen this modal
-  const handleTaskModalClose = () => {
-    setIsTemporarilyHidden(false);
-    setTimeout(() => {
-      onOpenChange(true);
-    }, 100);
+    navigate(`/tasks?${params.toString()}`);
   };
 
   const userIds = [meeting?.created_by].filter(Boolean) as string[];
@@ -236,7 +237,6 @@ export const MeetingDetailModal = ({
   };
 
   return (
-    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto animate-in fade-in-0 zoom-in-95 duration-200">
         <DialogHeader>
@@ -266,10 +266,7 @@ export const MeetingDetailModal = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  handleTaskModalOpen();
-                  setTimeout(() => setShowTaskModal(true), 150);
-                }}
+                onClick={handleRequestCreateTask}
                 className="gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -547,45 +544,5 @@ export const MeetingDetailModal = ({
         </Tabs>
       </DialogContent>
     </Dialog>
-
-    <TaskModal
-      open={showTaskModal}
-      onOpenChange={(open) => {
-        setShowTaskModal(open);
-        if (!open) {
-          handleTaskModalClose();
-        }
-      }}
-      onSubmit={async (data) => {
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user?.id) return null;
-        
-        const { data: taskData, error } = await supabase
-          .from('tasks')
-          .insert({
-            ...data,
-            meeting_id: meeting.id,
-            module_type: 'meetings',
-            created_by: userData.user.id,
-          })
-          .select()
-          .single();
-
-        if (!error && taskData) {
-          setShowTaskModal(false);
-          fetchLinkedData();
-          onUpdate?.();
-          handleTaskModalClose();
-          toast({
-            title: "Success",
-            description: "Task created and linked to meeting",
-          });
-          return taskData;
-        }
-        return null;
-      }}
-      context={{ module: 'meetings', recordId: meeting.id, recordName: meeting.subject, locked: true }}
-    />
-  </>
   );
 };
