@@ -226,24 +226,30 @@ const AccountTable = forwardRef<AccountTableRef, AccountTableProps>(({
     refetchAccounts();
   };
 
-  // Handle viewId from URL (from global search)
+  // Handle viewId and tab from URL (from global search or return from Tasks)
   const viewId = searchParams.get('viewId');
+  const tabParam = searchParams.get('tab');
   useEffect(() => {
     if (viewId && accounts.length > 0) {
       const accountToView = accounts.find(a => a.id === viewId);
       if (accountToView) {
         setViewingAccount(accountToView);
+        // Set the tab if provided (e.g., returning from Tasks module)
+        if (tabParam) {
+          setDetailModalDefaultTab(tabParam);
+        }
         setShowDetailModal(true);
-        // Clear the viewId from URL after opening
+        // Clear the viewId and tab from URL after opening
         setSearchParams(prev => {
           prev.delete('viewId');
+          prev.delete('tab');
           return prev;
         }, {
           replace: true
         });
       }
     }
-  }, [viewId, accounts, setSearchParams]);
+  }, [viewId, tabParam, accounts, setSearchParams]);
 
   // Expose handleBulkDelete to parent via ref
   useImperativeHandle(ref, () => ({

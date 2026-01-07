@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RelatedTasksSection } from "@/components/shared/RelatedTasksSection";
-import { TaskModal } from "@/components/tasks/TaskModal";
-import { Task, CreateTaskData } from "@/types/task";
-import { useTasks } from "@/hooks/useTasks";
+import { Task } from "@/types/task";
 import { 
   Building2, 
   Globe, 
@@ -55,14 +54,10 @@ interface AccountDetailModalProps {
 }
 
 export const AccountDetailModal = ({ open, onOpenChange, account, onUpdate, onEdit, defaultTab = "overview" }: AccountDetailModalProps) => {
-  const { createTask, updateTask } = useTasks();
+  const navigate = useNavigate();
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState(defaultTab);
-  
-  // Task modal state - lifted to this level so TaskModal is a sibling, not child
-  const [taskModalOpen, setTaskModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [tasksRefreshToken, setTasksRefreshToken] = useState(0);
   
   // Update activeTab when defaultTab prop changes
@@ -70,58 +65,33 @@ export const AccountDetailModal = ({ open, onOpenChange, account, onUpdate, onEd
     setActiveTab(defaultTab);
   }, [defaultTab, open]);
 
-  // Handle request to create task - close account modal first, then open task modal
+  // Handle request to create task - navigate to Tasks module
   const handleRequestCreateTask = () => {
-    setEditingTask(null);
-    onOpenChange(false); // Close account modal first
-    // Use setTimeout to ensure the dialog fully unmounts and cleans up pointer-events
-    setTimeout(() => {
-      setTaskModalOpen(true);
-    }, 250);
+    if (!account) return;
+    onOpenChange(false); // Close account modal
+    const params = new URLSearchParams({
+      create: '1',
+      module: 'accounts',
+      recordId: account.id,
+      recordName: account.company_name,
+      return: '/accounts',
+      returnViewId: account.id,
+      returnTab: 'tasks'
+    });
+    navigate(`/tasks?${params.toString()}`);
   };
 
-  // Handle request to edit task
+  // Handle request to edit task - navigate to Tasks module with viewId
   const handleRequestEditTask = (task: Task) => {
-    setEditingTask(task);
-    onOpenChange(false);
-    setTimeout(() => {
-      setTaskModalOpen(true);
-    }, 250);
-  };
-
-  // Handle task modal close - reopen account modal
-  const handleTaskModalClose = () => {
-    setTaskModalOpen(false);
-    setEditingTask(null);
-    setTasksRefreshToken(prev => prev + 1); // Trigger tasks list refresh
-    setTimeout(() => {
-      onOpenChange(true);
-      setActiveTab('tasks'); // Return to tasks tab
-    }, 100);
-  };
-
-  // Handle task submit
-  const handleTaskSubmit = async (data: CreateTaskData) => {
-    if (!account) return null;
-    const taskData: CreateTaskData = {
-      ...data,
-      module_type: 'accounts',
-      account_id: account.id,
-    };
-    const result = await createTask(taskData);
-    if (result) {
-      handleTaskModalClose();
-    }
-    return result;
-  };
-
-  // Handle task update
-  const handleTaskUpdate = async (taskId: string, data: Partial<Task>, original: Task) => {
-    const result = await updateTask(taskId, data, original);
-    if (result) {
-      handleTaskModalClose();
-    }
-    return result;
+    if (!account) return;
+    onOpenChange(false); // Close account modal
+    const params = new URLSearchParams({
+      viewId: task.id,
+      return: '/accounts',
+      returnViewId: account.id,
+      returnTab: 'tasks'
+    });
+    navigate(`/tasks?${params.toString()}`);
   };
 
   if (!account) return null;
@@ -310,25 +280,6 @@ export const AccountDetailModal = ({ open, onOpenChange, account, onUpdate, onEd
         onOpenChange={setShowActivityLog}
         accountId={account.id}
         onSuccess={handleActivityLogged}
-      />
-
-      {/* Task Modal - rendered as sibling so it doesn't unmount when account modal closes */}
-      <TaskModal
-        open={taskModalOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            handleTaskModalClose();
-          }
-        }}
-        task={editingTask}
-        onSubmit={handleTaskSubmit}
-        onUpdate={handleTaskUpdate}
-        context={{ 
-          module: 'accounts', 
-          recordId: account.id, 
-          recordName: account.company_name, 
-          locked: true 
-        }}
       />
     </>
   );
