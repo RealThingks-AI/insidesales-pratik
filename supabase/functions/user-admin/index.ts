@@ -195,6 +195,16 @@ serve(async (req) => {
             );
           }
 
+          // Clear user's cached permissions immediately so role change takes effect instantly
+          const { error: cacheError } = await supabaseAdmin
+            .from('user_access_cache')
+            .delete()
+            .eq('user_id', userId);
+
+          if (cacheError) {
+            console.warn('Failed to clear user cache (non-critical):', cacheError);
+          }
+
           console.log('Role updated successfully in both auth and database by admin:', user.user.email);
           return new Response(
             JSON.stringify({ 
