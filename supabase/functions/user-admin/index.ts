@@ -153,9 +153,9 @@ serve(async (req) => {
         }
 
         const { userId, newRole } = body;
-        if (!userId || !newRole || !['admin', 'user'].includes(newRole)) {
+        if (!userId || !newRole || !['admin', 'manager', 'user'].includes(newRole)) {
           return new Response(
-            JSON.stringify({ error: 'Valid user ID and role (admin/user) are required' }),
+            JSON.stringify({ error: 'Valid user ID and role (admin/manager/user) are required' }),
             { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
           );
         }
