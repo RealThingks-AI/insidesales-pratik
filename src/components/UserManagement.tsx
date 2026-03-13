@@ -45,11 +45,8 @@ const UserManagement = () => {
   const { isAdmin, loading: roleLoading, userRole } = useUserRole();
   const { logSecurityEvent } = useSecurityAudit();
 
-  console.log('UserManagement - Current user role:', userRole, 'isAdmin:', isAdmin, 'loading:', roleLoading);
-
   const fetchUsers = useCallback(async () => {
     try {
-      console.log('Fetching users with role validation...');
       
       const { data, error } = await supabase.functions.invoke('user-admin', {
         method: 'GET'

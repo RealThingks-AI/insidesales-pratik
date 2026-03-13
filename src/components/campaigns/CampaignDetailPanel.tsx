@@ -76,7 +76,7 @@ export function CampaignDetailPanel({ campaign, onClose, onEdit }: Props) {
           <TabsTrigger value="templates">Templates</TabsTrigger>
           <TabsTrigger value="scripts">Scripts</TabsTrigger>
           <TabsTrigger value="materials">Materials</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
+          <TabsTrigger value="tasks">Action Items</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 

@@ -7,7 +7,7 @@ const actions = [
   { label: 'Contact', icon: Users, path: '/contacts', color: 'text-blue-600' },
   { label: 'Account', icon: Building2, path: '/accounts', color: 'text-emerald-600' },
   { label: 'Deal', icon: Briefcase, path: '/deals', color: 'text-violet-600' },
-  { label: 'Task', icon: CheckSquare, path: '/action-items', color: 'text-amber-600' },
+  { label: 'Action Item', icon: CheckSquare, path: '/action-items', color: 'text-amber-600' },
 ];
 
 export const QuickActionsWidget = () => {

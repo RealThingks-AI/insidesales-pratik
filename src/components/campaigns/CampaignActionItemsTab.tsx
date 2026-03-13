@@ -197,7 +197,7 @@ export function CampaignActionItemsTab({ campaignId }: Props) {
           <DialogHeader><DialogTitle>Create Action Item</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label>Task Title</Label>
+              <Label>Title</Label>
               <Input value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Follow up with contact" className="h-9" />
             </div>
             <div>

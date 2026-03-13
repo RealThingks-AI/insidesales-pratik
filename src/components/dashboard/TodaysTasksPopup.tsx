@@ -244,7 +244,7 @@ export function TodaysTasksPopup() {
                 Dismiss
               </Button>
               <Button size="sm" onClick={handleViewAll}>
-                View All Tasks
+                View All Action Items
               </Button>
             </div>
           </DialogFooter>

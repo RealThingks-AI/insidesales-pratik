@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
+import { useUserRole } from "./useUserRole";
 
 export interface DashboardData {
   deals: { stage: string; count: number }[];
@@ -10,46 +11,56 @@ export interface DashboardData {
   emailStats: { sent: number; opened: number; rate: number };
   todaysAgenda: { id: string; title: string; priority: string; due_time: string | null; module_type: string }[];
   recentActivities: { id: string; action: string; resource_type: string; resource_id: string | null; created_at: string; details: any }[];
-}
-
-function countBy<T>(items: T[], key: keyof T, categories: string[]): { label: string; count: number }[] {
-  const counts: Record<string, number> = {};
-  categories.forEach(c => counts[c] = 0);
-  items.forEach(item => {
-    const val = (item[key] as string) || '';
-    const match = categories.find(c => c.toLowerCase() === val.toLowerCase());
-    if (match) counts[match]++;
-    else {
-      // put in "Other" if exists, otherwise first category
-      if (counts['Other'] !== undefined) counts['Other']++;
-    }
-  });
-  return categories.map(c => ({ label: c, count: counts[c] || 0 }));
+  isAdmin: boolean;
 }
 
 export const useDashboardData = () => {
   const { user } = useAuth();
+  const { isAdmin, loading: roleLoading } = useUserRole();
 
   return useQuery({
-    queryKey: ['dashboard-data', user?.id],
+    queryKey: ['dashboard-data', user?.id, isAdmin],
     queryFn: async (): Promise<DashboardData> => {
       if (!user) throw new Error('Not authenticated');
 
+      // Build queries - admins see all, regular users see their own
+      const dealsQuery = supabase.from('deals').select('stage');
+      const accountsQuery = supabase.from('accounts').select('status');
+      const contactsQuery = supabase.from('contacts').select('contact_source');
+      const actionItemsQuery = supabase.from('action_items').select('status');
+      const emailQuery = supabase.from('campaign_communications').select('email_status').eq('communication_type', 'email');
+
+      // Apply user-specific filters for non-admins
+      if (!isAdmin) {
+        dealsQuery.eq('created_by', user.id);
+        accountsQuery.eq('account_owner', user.id);
+        contactsQuery.eq('contact_owner', user.id);
+        actionItemsQuery.eq('assigned_to', user.id);
+        emailQuery.eq('created_by', user.id);
+      }
+
+      const todayQuery = supabase.from('action_items')
+        .select('id, title, priority, due_time, module_type')
+        .eq('assigned_to', user.id)
+        .eq('due_date', new Date().toISOString().split('T')[0])
+        .neq('status', 'Completed')
+        .neq('status', 'Cancelled')
+        .order('due_time', { ascending: true })
+        .limit(10);
+
+      // Only fetch audit log for admins
+      const activityQuery = isAdmin
+        ? supabase.from('security_audit_log').select('id, action, resource_type, resource_id, created_at, details').order('created_at', { ascending: false }).limit(15)
+        : Promise.resolve({ data: [], error: null });
+
       const [dealsRes, accountsRes, contactsRes, actionItemsRes, emailRes, todayRes, activityRes] = await Promise.all([
-        // Deals by stage
-        supabase.from('deals').select('stage').eq('created_by', user.id),
-        // Accounts by status
-        supabase.from('accounts').select('status').eq('account_owner', user.id),
-        // Contacts by source
-        supabase.from('contacts').select('contact_source').eq('contact_owner', user.id),
-        // Action items by status
-        supabase.from('action_items').select('status').eq('assigned_to', user.id),
-        // Email stats
-        supabase.from('campaign_communications').select('email_status').eq('created_by', user.id).eq('communication_type', 'email'),
-        // Today's agenda
-        supabase.from('action_items').select('id, title, priority, due_time, module_type').eq('assigned_to', user.id).eq('due_date', new Date().toISOString().split('T')[0]).neq('status', 'Completed').neq('status', 'Cancelled').order('due_time', { ascending: true }).limit(10),
-        // Recent activities
-        supabase.from('security_audit_log').select('id, action, resource_type, resource_id, created_at, details').order('created_at', { ascending: false }).limit(15),
+        dealsQuery,
+        accountsQuery,
+        contactsQuery,
+        actionItemsQuery,
+        emailQuery,
+        todayQuery,
+        activityQuery,
       ]);
 
       // Process deals
@@ -102,9 +113,10 @@ export const useDashboardData = () => {
         emailStats: { sent, opened, rate: sent > 0 ? Math.round((opened / sent) * 100) : 0 },
         todaysAgenda: (todayRes.data || []) as DashboardData['todaysAgenda'],
         recentActivities: (activityRes.data || []) as DashboardData['recentActivities'],
+        isAdmin,
       };
     },
-    enabled: !!user,
+    enabled: !!user && !roleLoading,
     staleTime: 30000,
   });
 };

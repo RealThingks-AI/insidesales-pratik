@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Eye, Mail } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 interface TemplatePreviewModalProps {
   open: boolean;
@@ -36,7 +37,7 @@ const TemplatePreviewModal = ({ open, onOpenChange, template }: TemplatePreviewM
   if (!template) return null;
 
   const renderedSubject = renderWithVariables(template.subject);
-  const renderedBody = renderWithVariables(template.body);
+  const renderedBody = DOMPurify.sanitize(renderWithVariables(template.body));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
