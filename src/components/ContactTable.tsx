@@ -54,6 +54,7 @@ interface ContactTableProps {
   refreshTrigger?: number;
   searchTerm?: string;
   setSearchTerm?: (term: string) => void;
+  filters?: Record<string, string>;
 }
 
 export const ContactTable = ({ 
