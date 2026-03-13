@@ -141,7 +141,7 @@ export function CampaignActionItemsTab({ campaignId }: Props) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Task</TableHead>
+              <TableHead>Action Item</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Due Date</TableHead>
