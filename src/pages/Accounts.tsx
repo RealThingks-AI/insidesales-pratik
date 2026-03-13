@@ -59,6 +59,11 @@ const Accounts = () => {
     if (selectedAccounts.length === 0) return;
     setShowDeleteConfirm(false);
     try {
+      // Clean up related deals by setting their account_id to null
+      await supabase.from('deals').update({ account_id: null }).in('account_id', selectedAccounts);
+      // Clean up campaign_accounts
+      await supabase.from('campaign_accounts').delete().in('account_id', selectedAccounts);
+
       const { error } = await supabase.from('accounts').delete().in('id', selectedAccounts);
       if (error) throw error;
       await logBulkDelete('accounts', selectedAccounts.length, selectedAccounts);
