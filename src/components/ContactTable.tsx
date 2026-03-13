@@ -66,7 +66,8 @@ export const ContactTable = ({
   setSelectedContacts,
   refreshTrigger,
   searchTerm = "",
-  setSearchTerm
+  setSearchTerm,
+  filters: externalFilters = {},
 }: ContactTableProps) => {
   const { toast } = useToast();
   const { logDelete, logCreate } = useCRUDAudit();
