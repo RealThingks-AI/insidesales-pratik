@@ -1,91 +1,69 @@
 
 
-## Fix Note Editor Bullet Point & Stakeholders Layout Issues
+# Updated CRM QA Fix Plan
 
-### Issues Found
+## User Constraints
+1. **No separate Leads or Meetings modules** — Lead management stays within the Deals pipeline (Lead stage). No standalone modules.
+2. **Consistent terminology** — Always use "Action Items" everywhere, never "Tasks."
 
-1. **Bullet point moves when typing**: `autoFocus` on the Textarea (line 633) places the cursor at position 0 (before `"• "`), so typing inserts text before the bullet instead of after it.
+## Priority Fixes (Updated)
 
-2. **Notes panel lacks proper scrollbar**: The notes summary panel (line 580-679) has a `max-h-[280px]` on the inner div but the outer wrapper has no scroll constraint, so it still pushes content.
+### Critical
+| # | Issue | File(s) | Effort |
+|---|-------|---------|--------|
+| 1 | XSS in email template preview — add DOMPurify sanitization | `TemplatePreviewModal.tsx` | Small |
+| 2 | Dashboard data visibility — admins should see all records, not just own | `useDashboardData.tsx` | Medium |
+| 3 | Add account selector to DealForm | `DealForm.tsx`, stage forms | Medium |
+| 4 | Audit log data leak — restrict dashboard widget to admin role | `useDashboardData.tsx`, `RecentActivitiesWidget.tsx` | Small |
 
-3. **Stakeholders section grows unbounded**: The `StakeholdersSection` component has no max-height. When the Notes panel is open with many notes, it consumes all vertical space, squishing the Updates and Action Items sections to near-zero height.
+### High
+| # | Issue | File(s) | Effort |
+|---|-------|---------|--------|
+| 5 | Re-add module_type filter to Action Items page | `ActionItems.tsx` | Small |
+| 6 | Add contact filters (source, owner, region) | `Contacts.tsx` | Medium |
+| 7 | Fix Email Analytics 1000-row Supabase limit | `EmailAnalyticsDashboard.tsx` | Medium |
+| 8 | Rename any "Task/Tasks" labels to "Action Items" across entire UI (sidebar, buttons, tooltips, dashboard widgets, campaign tabs, settings) | Multiple files | Medium |
 
-### Changes (single file: `src/components/DealExpandedPanel.tsx`)
+### Medium
+| # | Issue | File(s) | Effort |
+|---|-------|---------|--------|
+| 9 | Standardize header/filter bar styling across all modules | Module pages | Small |
+| 10 | Fix notification separator rendering when already read | `Notifications.tsx` | Small |
+| 11 | Fix bulk account delete cascade (orphan deals) | `Accounts.tsx` | Medium |
+| 12 | Add Forgot Password flow to Auth page | `Auth.tsx` | Medium |
 
-#### Fix 1: Bullet cursor positioning (line 628-634)
+### Low
+| # | Issue | File(s) | Effort |
+|---|-------|---------|--------|
+| 13 | Remove `console.log` from UserManagement | `UserManagement.tsx` | Trivial |
+| 14 | Fix Settings `h-screen` double scroll | `Settings.tsx` | Small |
+| 15 | Add empty state for tables when no records match | Account/Contact tables | Small |
 
-Replace `autoFocus` on the Textarea with a `ref` callback that focuses the element AND places the cursor at the end of the text (after `"• "`):
+## Terminology Audit — "Tasks" → "Action Items"
 
-```tsx
-<Textarea
-  value={noteText}
-  onChange={(e) => setNoteText(e.target.value)}
-  onKeyDown={handleNoteKeyDown}
-  className="min-h-[100px] text-xs resize-none"
-  ref={(el) => {
-    if (el) {
-      el.focus();
-      const len = el.value.length;
-      el.selectionStart = len;
-      el.selectionEnd = len;
-    }
-  }}
-/>
-```
+Files to update (rename all user-facing "Task" references to "Action Items"):
+- `AppSidebar.tsx` — sidebar menu label
+- `QuickActionsWidget.tsx` — "Task" button label → "Action Item"
+- `ActionItemsWidget.tsx` — verify title says "Action Items"
+- `TodaysTasksPopup.tsx` — rename to "Today's Action Items" in heading
+- `DashboardHeader.tsx` — any "task" references
+- `CampaignActionItemsTab.tsx` — tab label verification
+- `DealExpandedPanel.tsx` — section headers
+- `ActionItemModal.tsx` — dialog titles/descriptions
+- Campaign settings — any "task" labels
 
-#### Fix 2: Constrain Stakeholders section height
+## Excluded from Plan
+- **No separate Leads module** — Leads are managed as the first stage of the Deals pipeline (already implemented)
+- **No separate Meetings module** — Not creating a standalone meetings page
+- **No "Tasks" module** — The module is called "Action Items" everywhere
 
-Wrap the StakeholdersSection output in a container with `max-h` and `overflow-y-auto` so it scrolls when content is large. Change the outer div (line 462) from:
-
-```tsx
-<div className="px-3 pt-1.5 pb-1">
-```
-
-to:
-
-```tsx
-<div className="px-3 pt-1.5 pb-1 max-h-[45%] overflow-y-auto shrink-0">
-```
-
-However, since this is not inside a flex parent that uses percentage heights well, a better approach is to change the parent layout. The parent (line 1182) is:
-
-```tsx
-<div className="flex-1 min-h-0 flex flex-col overflow-hidden gap-1">
-```
-
-The fix: Make the StakeholdersSection a flex item that can shrink, and give it a max-height so it doesn't dominate. Change line 1184 from:
-
-```tsx
-<StakeholdersSection deal={deal} queryClient={queryClient} />
-```
-
-to wrap it in a constrained container:
-
-```tsx
-<div className="shrink-0 max-h-[40%] overflow-y-auto">
-  <StakeholdersSection deal={deal} queryClient={queryClient} />
-</div>
-```
-
-This ensures:
-- Stakeholders section gets at most 40% of the panel height
-- When content exceeds that, a scrollbar appears
-- Updates and Action Items always get their fair share of space
-
-#### Fix 3: Ensure notes panel scrolls properly
-
-The notes summary panel (line 596) already has `max-h-[280px] overflow-y-auto`, but when inside the constrained container from Fix 2, this works correctly. No additional change needed here -- the outer scroll from Fix 2 handles it.
-
-### Summary
-
-| Change | Line(s) | Description |
-|--------|---------|-------------|
-| Replace `autoFocus` with ref callback | 628-634 | Cursor placed after bullet on open |
-| Wrap StakeholdersSection in scrollable container | 1184 | Max 40% height with scrollbar |
-
-### Technical Notes
-
-- The ref callback fires on every render, but since `el.focus()` is idempotent when already focused, this is harmless
-- The `max-h-[40%]` works because the parent has `flex-1 min-h-0` which resolves to an actual pixel height
-- Updates and Action Items sections keep their `flex-1 min-h-0` with `h-[220px]`, ensuring they share remaining space equally
+## Implementation Order
+1. Fix #1 (XSS) + Fix #13 (console.log) — quick security wins
+2. Fix #8 (rename Tasks → Action Items everywhere) — terminology consistency
+3. Fix #2 + #4 (dashboard data/audit) — data visibility
+4. Fix #3 (account selector in DealForm)
+5. Fix #5 + #6 (missing filters)
+6. Fix #7 + #9 + #10 (analytics limit, UI consistency)
+7. Fix #11 + #12 (cascade, forgot password)
+8. Fix #14 + #15 (low priority polish)
 
