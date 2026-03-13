@@ -121,7 +121,7 @@ export const ContactTable = ({
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, sortField, sortDirection, debouncedSearch, toast]);
+  }, [currentPage, itemsPerPage, sortField, sortDirection, debouncedSearch, toast, JSON.stringify(externalFilters)]);
 
   useEffect(() => {
     fetchContacts();
