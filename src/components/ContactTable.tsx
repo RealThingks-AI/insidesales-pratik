@@ -106,6 +106,7 @@ export const ContactTable = ({
         sortDirection,
         searchTerm: debouncedSearch || undefined,
         searchFields: ['contact_name', 'company_name', 'email'],
+        filters: externalFilters,
       });
 
       setPageContacts(result.data);
