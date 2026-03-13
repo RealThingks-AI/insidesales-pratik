@@ -170,7 +170,7 @@ export function TodaysTasksPopup() {
                 <CalendarDays className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-semibold text-foreground">Today's Agenda</DialogTitle>
+                <DialogTitle className="text-lg font-semibold text-foreground">Today's Action Items</DialogTitle>
                 <p className="text-sm text-muted-foreground">
                   {format(new Date(), 'EEEE, MMMM d, yyyy')}
                 </p>
