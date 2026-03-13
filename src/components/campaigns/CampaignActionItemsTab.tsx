@@ -136,7 +136,7 @@ export function CampaignActionItemsTab({ campaignId }: Props) {
       </div>
 
       {!items.length ? (
-        <p className="text-sm text-muted-foreground text-center py-8">No action items yet. Create tasks for follow-ups, calls, and meetings.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">No action items yet. Create action items for follow-ups, calls, and meetings.</p>
       ) : (
         <Table>
           <TableHeader>
