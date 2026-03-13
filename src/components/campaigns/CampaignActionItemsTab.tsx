@@ -131,7 +131,7 @@ export function CampaignActionItemsTab({ campaignId }: Props) {
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-medium text-foreground">Action Items ({items.length})</span>
         <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-3 w-3 mr-1" /> Add Task
+          <Plus className="h-3 w-3 mr-1" /> Add Action Item
         </Button>
       </div>
 
