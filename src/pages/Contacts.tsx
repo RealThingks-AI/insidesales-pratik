@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
-import { Settings, MoreVertical, Upload, Plus, Trash2, Download, Search } from "lucide-react";
-import { useState, useRef } from "react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Settings, MoreVertical, Upload, Plus, Trash2, Download, Search, X } from "lucide-react";
+import { useState, useRef, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useSimpleContactsImportExport } from "@/hooks/useSimpleContactsImportExport";
@@ -20,6 +21,10 @@ const Contacts = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Filter state
+  const [sourceFilter, setSourceFilter] = useState("all");
+  const [regionFilter, setRegionFilter] = useState("all");
 
   const onRefresh = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -67,6 +72,20 @@ const Contacts = () => {
     }
   };
 
+  const hasActiveFilters = sourceFilter !== 'all' || regionFilter !== 'all';
+
+  const filters = useMemo(() => {
+    const f: Record<string, string> = {};
+    if (sourceFilter !== 'all') f.contact_source = sourceFilter;
+    if (regionFilter !== 'all') f.region = regionFilter;
+    return f;
+  }, [sourceFilter, regionFilter]);
+
+  const resetFilters = () => {
+    setSourceFilter('all');
+    setRegionFilter('all');
+  };
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Header - fixed height matching sidebar */}
@@ -93,6 +112,43 @@ const Contacts = () => {
               className="pl-9" 
             />
           </div>
+
+          {/* Source Filter */}
+          <Select value={sourceFilter} onValueChange={setSourceFilter}>
+            <SelectTrigger className="w-auto min-w-[100px] [&>svg]:hidden">
+              <SelectValue placeholder="Source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              <SelectItem value="Website">Website</SelectItem>
+              <SelectItem value="Referral">Referral</SelectItem>
+              <SelectItem value="LinkedIn">LinkedIn</SelectItem>
+              <SelectItem value="Trade Show">Trade Show</SelectItem>
+              <SelectItem value="Cold Call">Cold Call</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Region Filter */}
+          <Select value={regionFilter} onValueChange={setRegionFilter}>
+            <SelectTrigger className="w-auto min-w-[100px] [&>svg]:hidden">
+              <SelectValue placeholder="Region" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Regions</SelectItem>
+              <SelectItem value="EU">EU</SelectItem>
+              <SelectItem value="US">US</SelectItem>
+              <SelectItem value="ASIA">ASIA</SelectItem>
+              <SelectItem value="Other">Other</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={resetFilters}>
+              <X className="mr-1 h-4 w-4" />
+              Clear Filters
+            </Button>
+          )}
 
           {/* Spacer */}
           <div className="flex-1" />
@@ -168,6 +224,7 @@ const Contacts = () => {
           refreshTrigger={refreshTrigger}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
+          filters={filters}
         />
       </div>
     </div>

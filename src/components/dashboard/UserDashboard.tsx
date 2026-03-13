@@ -38,10 +38,10 @@ export const UserDashboard = () => {
         <QuickActionsWidget />
       </div>
 
-      {/* Bottom row: 2 widgets */}
+      {/* Bottom row: 2 widgets - only show audit log for admins */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TodaysAgendaWidget data={data.todaysAgenda} />
-        <RecentActivitiesWidget data={data.recentActivities} />
+        {data.isAdmin && <RecentActivitiesWidget data={data.recentActivities} />}
       </div>
     </div>
   );

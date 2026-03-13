@@ -54,6 +54,7 @@ interface ContactTableProps {
   refreshTrigger?: number;
   searchTerm?: string;
   setSearchTerm?: (term: string) => void;
+  filters?: Record<string, string>;
 }
 
 export const ContactTable = ({ 
@@ -65,7 +66,8 @@ export const ContactTable = ({
   setSelectedContacts,
   refreshTrigger,
   searchTerm = "",
-  setSearchTerm
+  setSearchTerm,
+  filters: externalFilters = {},
 }: ContactTableProps) => {
   const { toast } = useToast();
   const { logDelete, logCreate } = useCRUDAudit();
@@ -104,6 +106,7 @@ export const ContactTable = ({
         sortDirection,
         searchTerm: debouncedSearch || undefined,
         searchFields: ['contact_name', 'company_name', 'email'],
+        filters: externalFilters,
       });
 
       setPageContacts(result.data);
@@ -118,7 +121,7 @@ export const ContactTable = ({
     } finally {
       setLoading(false);
     }
-  }, [currentPage, itemsPerPage, sortField, sortDirection, debouncedSearch, toast]);
+  }, [currentPage, itemsPerPage, sortField, sortDirection, debouncedSearch, toast, JSON.stringify(externalFilters)]);
 
   useEffect(() => {
     fetchContacts();

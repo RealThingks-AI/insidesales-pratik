@@ -47,14 +47,28 @@ export const EmailAnalyticsDashboard = () => {
         const startDate = startOfDay(subDays(new Date(), days));
         const endDate = endOfDay(new Date());
 
-        const { data: emails, error } = await supabase
-          .from('email_history')
-          .select('*')
-          .gte('sent_at', startDate.toISOString())
-          .lte('sent_at', endDate.toISOString())
-          .order('sent_at', { ascending: true });
+        // Fetch emails in batches to avoid the 1000-row Supabase limit
+        let allEmails: any[] = [];
+        let from = 0;
+        const batchSize = 1000;
+        let hasMore = true;
 
-        if (error) throw error;
+        while (hasMore) {
+          const { data: batch, error: batchError } = await supabase
+            .from('email_history')
+            .select('sent_at, status, open_count, is_valid_open, bounce_type, reply_count')
+            .gte('sent_at', startDate.toISOString())
+            .lte('sent_at', endDate.toISOString())
+            .order('sent_at', { ascending: true })
+            .range(from, from + batchSize - 1);
+
+          if (batchError) throw batchError;
+          allEmails = [...allEmails, ...(batch || [])];
+          hasMore = (batch?.length || 0) === batchSize;
+          from += batchSize;
+        }
+
+        const emails = allEmails;
 
         const totalSent = emails?.length || 0;
         const totalOpened = emails?.filter((e: any) => e.open_count && e.open_count > 0 && e.is_valid_open !== false && e.status !== 'bounced' && !e.bounce_type).length || 0;

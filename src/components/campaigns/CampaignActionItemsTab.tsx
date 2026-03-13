@@ -131,17 +131,17 @@ export function CampaignActionItemsTab({ campaignId }: Props) {
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-medium text-foreground">Action Items ({items.length})</span>
         <Button size="sm" variant="outline" onClick={() => setCreateOpen(true)}>
-          <Plus className="h-3 w-3 mr-1" /> Add Task
+          <Plus className="h-3 w-3 mr-1" /> Add Action Item
         </Button>
       </div>
 
       {!items.length ? (
-        <p className="text-sm text-muted-foreground text-center py-8">No action items yet. Create tasks for follow-ups, calls, and meetings.</p>
+        <p className="text-sm text-muted-foreground text-center py-8">No action items yet. Create action items for follow-ups, calls, and meetings.</p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Task</TableHead>
+              <TableHead>Action Item</TableHead>
               <TableHead>Priority</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Due Date</TableHead>
@@ -197,7 +197,7 @@ export function CampaignActionItemsTab({ campaignId }: Props) {
           <DialogHeader><DialogTitle>Create Action Item</DialogTitle></DialogHeader>
           <div className="space-y-3 mt-2">
             <div>
-              <Label>Task Title</Label>
+              <Label>Title</Label>
               <Input value={form.title} onChange={e => set('title', e.target.value)} placeholder="e.g. Follow up with contact" className="h-9" />
             </div>
             <div>

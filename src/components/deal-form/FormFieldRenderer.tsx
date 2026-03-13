@@ -258,6 +258,13 @@ export const FormFieldRenderer = ({ field, value, onChange, onContactSelect, err
           <AccountSearchableDropdown
             value={getStringValue(value)}
             onValueChange={(val) => onChange(field, val)}
+            onAccountSelect={(account) => {
+              // Also set account_id when an account is selected
+              onChange('account_id', account.id);
+              if (account.region) {
+                onChange('region', account.region);
+              }
+            }}
             placeholder="Search and select an account..."
           />
         );
