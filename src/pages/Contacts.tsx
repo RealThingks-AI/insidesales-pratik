@@ -94,9 +94,6 @@ const Contacts = () => {
             />
           </div>
 
-          {/* Spacer */}
-          <div className="flex-1" />
-
           {/* Actions dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
