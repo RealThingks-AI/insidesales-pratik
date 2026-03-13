@@ -140,7 +140,7 @@ const Settings = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-background overflow-hidden">
+    <div className="flex flex-col h-full bg-background overflow-hidden">
       {/* Tab Navigation */}
       <div className="flex-shrink-0 border-b bg-background h-16 flex items-end">
         <div className="px-6">
